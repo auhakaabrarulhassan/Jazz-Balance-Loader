@@ -1,0 +1,172 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mobile Balance & Tax Calculator</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&display=swap');
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f3f4f6;
+        }
+        .input-group:focus-within label {
+            color: #dc2626; /* Changed to Red */
+        }
+        .input-group:focus-within i {
+            color: #dc2626; /* Changed to Red */
+        }
+        /* Smooth transitions for numbers */
+        .result-value {
+            transition: all 0.3s ease;
+        }
+    </style>
+</head>
+<body class="min-h-screen flex items-center justify-center p-4 text-gray-800">
+
+    <div class="bg-white w-full max-w-md rounded-2xl shadow-xl overflow-hidden border border-gray-100">
+        
+        <!-- Header -->
+        <div class="bg-gradient-to-r from-red-600 to-red-500 p-6 text-white text-center">
+            <!-- Logo Section -->
+            <div class="flex justify-center mb-4">
+                <div class="bg-white p-2 rounded-xl shadow-lg w-20 h-20 flex items-center justify-center">
+                    <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/e/e6/Jazz_logo.png/240px-Jazz_logo.png" 
+                         alt="Jazz Logo" 
+                         class="w-full h-full object-contain"
+                         onerror="this.onerror=null; this.parentElement.innerHTML='<i class=\'fas fa-signal text-red-600 text-3xl\'></i>'">
+                </div>
+            </div>
+            <h1 class="text-2xl font-bold tracking-wide">Jazz Load Calc</h1>
+            <p class="text-red-100 text-sm mt-1">Calculate exact recharge required</p>
+        </div>
+
+        <div class="p-6 space-y-6">
+
+            <!-- Input Section -->
+            <div class="space-y-4">
+                <div class="input-group relative">
+                    <label class="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-1 ml-1">Desired Balance (PKR)</label>
+                    <div class="relative">
+                        <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                            <i class="fas fa-wallet text-gray-400"></i>
+                        </div>
+                        <input type="number" id="desiredBalance" placeholder="e.g. 160" 
+                            class="pl-10 block w-full rounded-lg border-gray-200 bg-gray-50 border-2 focus:bg-white focus:border-red-500 focus:ring-0 transition-colors py-3 text-lg font-semibold text-gray-700 placeholder-gray-300"
+                            oninput="calculateLoad()">
+                    </div>
+                </div>
+
+                <!-- Tax Toggle (Collapsible) -->
+                <div>
+                    <button onclick="toggleSettings()" class="text-xs text-gray-500 flex items-center hover:text-red-600 transition-colors">
+                        <i class="fas fa-cog mr-1"></i> Edit Tax Rate (<span id="currentRateDisplay">15%</span>)
+                    </button>
+                    <div id="settingsPanel" class="hidden mt-2 p-3 bg-gray-50 rounded-lg border border-gray-100">
+                        <label class="block text-xs font-bold text-gray-500 mb-1">Tax Percentage (%)</label>
+                        <input type="number" id="taxRate" value="15.0" step="0.1"
+                            class="block w-full rounded border-gray-200 p-2 text-sm focus:border-red-500 outline-none"
+                            oninput="calculateLoad()">
+                    </div>
+                </div>
+            </div>
+
+            <!-- Results Section -->
+            <div id="resultsArea" class="hidden animate-fade-in-up">
+                
+                <div class="bg-red-50 rounded-xl p-5 border border-red-100 relative overflow-hidden">
+                    <!-- Background Decoration -->
+                    <div class="absolute -right-4 -top-4 text-red-100 opacity-50">
+                        <i class="fas fa-money-bill-wave text-8xl transform rotate-12"></i>
+                    </div>
+
+                    <p class="text-sm text-red-600 font-semibold mb-1 z-10 relative">You need to load</p>
+                    <div class="flex items-baseline z-10 relative">
+                        <span class="text-3xl font-bold text-red-800">PKR</span>
+                        <span id="requiredLoad" class="text-4xl font-bold text-red-900 ml-2">0</span>
+                    </div>
+                    <p class="text-xs text-red-600 mt-2 z-10 relative">
+                        *Load <span class="font-bold" id="roundedLoad">0</span> for safe measure
+                    </p>
+                </div>
+
+                <!-- Breakdown -->
+                <div class="grid grid-cols-2 gap-4 mt-4">
+                    <div class="bg-gray-50 p-3 rounded-lg border border-gray-100 text-center">
+                        <p class="text-xs text-gray-500 mb-1">Tax Deduction</p>
+                        <p class="text-lg font-bold text-red-500">- <span id="taxAmount">0</span></p>
+                    </div>
+                    <div class="bg-gray-50 p-3 rounded-lg border border-gray-100 text-center">
+                        <p class="text-xs text-gray-500 mb-1">Final Balance</p>
+                        <p class="text-lg font-bold text-gray-700" id="finalBalance">0</p>
+                    </div>
+                </div>
+
+                <!-- Explanation -->
+                <div class="mt-4 flex items-start space-x-2 bg-blue-50 p-3 rounded text-blue-800 text-xs">
+                    <i class="fas fa-info-circle mt-0.5"></i>
+                    <p>Formula used: <span class="font-mono bg-blue-100 px-1 rounded">Load = Balance / (1 - TaxRate)</span>.</p>
+                </div>
+            </div>
+
+            <!-- Empty State -->
+            <div id="emptyState" class="text-center py-6 text-gray-400">
+                <i class="fas fa-calculator text-4xl mb-3 opacity-30"></i>
+                <p class="text-sm">Enter a balance amount to calculate</p>
+            </div>
+
+        </div>
+    </div>
+
+    <script>
+        function toggleSettings() {
+            const panel = document.getElementById('settingsPanel');
+            panel.classList.toggle('hidden');
+        }
+
+        function calculateLoad() {
+            const desiredBalanceInput = document.getElementById('desiredBalance');
+            const taxRateInput = document.getElementById('taxRate');
+            
+            const desiredBalance = parseFloat(desiredBalanceInput.value);
+            const taxPercent = parseFloat(taxRateInput.value);
+            
+            // Update rate display in toggle button
+            document.getElementById('currentRateDisplay').innerText = taxPercent + '%';
+
+            const resultsArea = document.getElementById('resultsArea');
+            const emptyState = document.getElementById('emptyState');
+
+            // Validation
+            if (!desiredBalance || desiredBalance <= 0 || isNaN(desiredBalance)) {
+                resultsArea.classList.add('hidden');
+                emptyState.classList.remove('hidden');
+                return;
+            }
+
+            // Calculation Logic
+            // Formula: Net = Gross * (1 - taxRate)
+            // Therefore: Gross = Net / (1 - taxRate)
+            
+            const taxDecimal = taxPercent / 100;
+            const requiredLoadExact = desiredBalance / (1 - taxDecimal);
+            const roundedLoad = Math.ceil(requiredLoadExact); // Suggest whole number
+            
+            // Calculate actuals based on the exact required load
+            const taxAmount = requiredLoadExact * taxDecimal;
+            
+            // Update DOM
+            document.getElementById('requiredLoad').innerText = requiredLoadExact.toFixed(2);
+            document.getElementById('roundedLoad').innerText = roundedLoad;
+            document.getElementById('taxAmount').innerText = taxAmount.toFixed(2);
+            document.getElementById('finalBalance').innerText = desiredBalance.toFixed(2);
+
+            // Show Results
+            resultsArea.classList.remove('hidden');
+            emptyState.classList.add('hidden');
+        }
+    </script>
+</body>
+</html>
